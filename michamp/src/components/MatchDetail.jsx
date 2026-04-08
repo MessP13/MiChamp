@@ -2,6 +2,7 @@ import { useState } from "react";
 import { RIOT_GAMES, MATCH_STATUS_CFG } from "../constants.js";
 import { overlapWindow } from "../utils/matchmaking.js";
 import { MatchBadge, ABtn, Divider, SLabel, Pill, row, card } from "./ui.jsx";
+import { MatchFormatSelector, MATCH_FORMATS } from "./MatchFormatSelector.jsx";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function TeamCard({ nome, jogadores, capitao, isRiot, isAdmin, side }) {
