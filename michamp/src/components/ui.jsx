@@ -1,5 +1,20 @@
 import { STATUS_CFG, MATCH_STATUS_CFG } from '../constants.js';
 
+// Adicionar no header principal:
+{import.meta.env.VITE_ENV === 'beta' && (
+  <span style={{ 
+    background:"linear-gradient(135deg, #6366f1, #8b5cf6)", 
+    color:"white", 
+    padding:"0.25rem 0.75rem", 
+    borderRadius:9999, 
+    fontSize:11, 
+    fontWeight:600,
+    boxShadow:"0 0 15px rgba(139, 92, 246, 0.5)"
+  }}>
+    🧪 BETA • 1min = 1dia • <strong style={{marginLeft:4}}>Dados isolados</strong>
+  </span>
+)}
+
 export const row  = { display:"flex", alignItems:"center", gap:8 };
 export const card = { background:"var(--card)", border:"0.5px solid var(--bd)", borderRadius:12, padding:"1rem 1.25rem" };
 export const scroll = { maxHeight:380, overflowY:"auto", display:"flex", flexDirection:"column", gap:10 };
