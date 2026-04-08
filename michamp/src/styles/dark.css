@@ -1,0 +1,64 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0c0c12;
+  --card: #13131f;
+  --el: #1b1b28;
+  --hover: #222235;
+  --text: #dcdcf0;
+  --muted: #6464a0;
+  --faint: #2e2e48;
+  --bd: rgba(255,255,255,0.07);
+  --bdm: rgba(255,255,255,0.13);
+  --ac: #818cf8;
+  --acbg: rgba(129,140,248,0.13);
+  --act: #a5b4fc;
+  --ok: #4ade80;
+  --okbg: rgba(74,222,128,0.09);
+  --nfo: #60a5fa;
+  --nfobg: rgba(96,165,250,0.09);
+  --warn: #fbbf24;
+  --warnbg: rgba(251,191,36,0.09);
+  --err: #f87171;
+  --errbg: rgba(248,113,113,0.09);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+button {
+  cursor: pointer;
+  border: 0.5px solid var(--bdm);
+  background: transparent;
+  color: var(--text);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 14px;
+  transition: background 0.1s;
+}
+button:hover:not(:disabled) { background: var(--hover); }
+button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+input, select, textarea {
+  background: var(--el);
+  border: 0.5px solid var(--bdm);
+  color: var(--text);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.1s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--ac); }
+::placeholder { color: var(--muted); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 2px; }
