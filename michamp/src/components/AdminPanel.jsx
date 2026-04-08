@@ -1,3 +1,4 @@
+// src/components/AdminPanel.jsx
 import { useState } from "react";
 import { STATUS_CFG, MATCH_STATUS_CFG, TEAM_SIZE } from "../constants.js";
 import { computeStatus } from "../utils/dates.js";
@@ -11,10 +12,10 @@ export default function AdminPanel({ data, setData, simDate, onClose, onUpdateMa
   const [tab, setTab]       = useState(0);
   const [resInput, setResInput] = useState({});
   const [soloGroups, setSoloGroups] = useState({});
+  const [actionPending, setActionPending] = useState(null); // { champId, action: Object }
 
   const allPending  = data.flatMap(c => c.participantes.filter(p => p.estado==="pendente").map(p => ({...p,champId:c.id,champNome:c.nome})));
   const allPedidos  = data.flatMap(c => (c.pedidos||[]).filter(p => p.status==="pendente").map(p => ({...p,champId:c.id,champNome:c.nome})));
-  // Also include match-level pedidos
   const matchPedidos = data.flatMap(c =>
     (c.partidas||[]).flatMap(m =>
       (m.pedidos||[]).filter(p => p.status==="pendente").map(p => ({
@@ -57,7 +58,13 @@ export default function AdminPanel({ data, setData, simDate, onClose, onUpdateMa
   const doSuggestSolos = (cId) => {
     const champ = data.find(c => c.id === cId);
     const solos = champ.participantes.filter(p => p.tipo==="solo" && p.estado==="aprovado");
-    setSoloGroups(prev => ({ ...prev, [cId]: suggestSoloTeams(solos, TEAM_SIZE[champ.jogo]||5) }));
+    const result = suggestSoloTeams(solos, TEAM_SIZE[champ.jogo]||5);
+    setSoloGroups(prev => ({ ...prev, [cId]: result }));
+    
+    // Se houver ação requerida, mostrar modal
+    if (result.actionRequired && result.suggestedAction) {
+      setActionPending({ champId: cId, action: result.suggestedAction, leftover: result.leftover });
+    }
   };
 
   const confirmSoloGroup = (cId, team, gi) => {
@@ -76,6 +83,70 @@ export default function AdminPanel({ data, setData, simDate, onClose, onUpdateMa
       g.teams = g.teams.filter((_, i) => i !== gi);
       return { ...prev, [cId]: g };
     });
+  };
+
+  // Handler para decisões sobre solos leftovers
+  const handleSoloDecision = (champId, actionType) => {
+    const champ = data.find(c => c.id === champId);
+    const pending = actionPending;
+    if (!pending || !pending.leftover) return;
+
+    const solos = pending.leftover;
+    const sz = TEAM_SIZE[champ.jogo] || 5;
+
+    switch(actionType) {
+      case 'merge':
+        // Agrupa todos os leftovers em um único time
+        if (solos.length >= 2) {
+          const newTeam = {
+            id: Date.now(), tipo:"time",
+            nome: `Time Solo (Agrupado)`, riot_tag:"#TS",
+            estado:"aprovado", capitao:null,
+            jogadores: solos.map(s => ({ nick:s.nick, riot_tag:s.riot_tag, role:s.role||"" })),
+          };
+          const soloIds = new Set(solos.map(s => s.id));
+          setData(prev => prev.map(c => c.id!==champId ? c : {
+            ...c, participantes: [...c.participantes.filter(p => !soloIds.has(p.id)), newTeam],
+          }));
+        }
+        break;
+
+      case 'discard':
+        // Remove todos os solos leftovers (marca como rejeitado)
+        const soloIds = new Set(solos.map(s => s.id));
+        setData(prev => prev.map(c => c.id!==champId ? c : {
+          ...c, participantes: c.participantes.map(p => 
+            soloIds.has(p.id) ? {...p, estado: "rejeitado"} : p
+          ),
+        }));
+        break;
+
+      case 'allow_solo_teams':
+        // Permite solos como times 1v1 (não faz nada, só fecha modal)
+        // Os solos permanecem e podem ser usados no matchmaking
+        break;
+
+      case 'postpone':
+        // Apenas fecha o modal - solos permanecem para próxima tentativa
+        break;
+
+      default:
+        break;
+    }
+
+    // Limpa estado de ação pendente
+    setActionPending(null);
+    
+    // Atualiza sugestões para remover o leftover
+    setSoloGroups(prev => ({
+      ...prev,
+      [champId]: {
+        ...prev[champId],
+        leftover: [],
+        actionRequired: false,
+        suggestedAction: null
+      }
+    }));
   };
 
   const saveResult = (cId, pId) => {
@@ -106,6 +177,106 @@ export default function AdminPanel({ data, setData, simDate, onClose, onUpdateMa
       <div style={{ display:"flex", gap:6, marginBottom:16, flexWrap:"wrap" }}>
         {TABS.map((t, i) => <Chip key={t} label={t + tabBadge(i)} active={tab===i} onClick={() => setTab(i)} />)}
       </div>
+
+      {/* ── MODAL: Decisão sobre solos leftovers ── */}
+      {actionPending && (
+        <div style={{
+          position:"fixed", top:0, left:0, right:0, bottom:0,
+          background:"rgba(0,0,0,0.7)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          zIndex:1000, padding:"1rem"
+        }} onClick={() => setActionPending(null)}>
+          <div style={{
+            background:"var(--card)",
+            borderRadius:12,
+            padding:"1.5rem",
+            maxWidth:500,
+            width:"100%",
+            border:"1px solid var(--warn)",
+            boxShadow:"0 8px 32px rgba(251,191,36,0.2)"
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ ...row, justifyContent:"space-between", marginBottom:16 }}>
+              <h3 style={{ fontSize:16, fontWeight:600, color:"var(--warn)" }}>
+                ⚠️ Jogadores sem Time
+              </h3>
+              <button onClick={() => setActionPending(null)} 
+                style={{ fontSize:18, color:"var(--muted)", background:"none", border:"none", padding:"0 4px" }}>
+                ×
+              </button>
+            </div>
+
+            <p style={{ fontSize:13, color:"var(--text)", marginBottom:12 }}>
+              {actionPending.action.message}
+            </p>
+
+            {actionPending.leftover && actionPending.leftover.length > 0 && (
+              <div style={{
+                background:"var(--el)",
+                borderRadius:8,
+                padding:"10px",
+                marginBottom:16,
+                border:"0.5px solid var(--bdm)"
+              }}>
+                <p style={{ fontSize:11, color:"var(--muted)", marginBottom:8 }}>
+                  Jogadores afetados ({actionPending.leftover.length}):
+                </p>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                  {actionPending.leftover.map(s => (
+                    <span key={s.id} style={{
+                      fontSize:11,
+                      padding:"3px 8px",
+                      background:"var(--card)",
+                      border:"0.5px solid var(--bdm)",
+                      borderRadius:5,
+                      color:"var(--muted)"
+                    }}>
+                      {s.nick} {s.riot_tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {actionPending.action.options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleSoloDecision(actionPending.champId, opt.id)}
+                  style={{
+                    fontSize:13,
+                    padding:"8px 12px",
+                    borderRadius:8,
+                    border:"0.5px solid var(--bdm)",
+                    background:"var(--el)",
+                    color:"var(--text)",
+                    textAlign:"left",
+                    cursor:"pointer",
+                    transition:"all 0.2s",
+                    display:"flex",
+                    alignItems:"center",
+                    gap:8
+                  }}
+                  onMouseEnter={e => {
+                    e.target.style.borderColor = "var(--ac)";
+                    e.target.style.background = "var(--acbg)";
+                  }}
+                  onMouseLeave={e => {
+                    e.target.style.borderColor = "var(--bdm)";
+                    e.target.style.background = "var(--el)";
+                  }}
+                >
+                  <span style={{ fontSize:16 }}>{opt.icon}</span>
+                  <span style={{ fontWeight:500 }}>{opt.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <p style={{ fontSize:11, color:"var(--muted)", marginTop:12, textAlign:"center" }}>
+              Esta ação não pode ser desfeita facilmente
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── Tab 0: Visão geral ── */}
       {tab===0 && (
@@ -227,116 +398,11 @@ export default function AdminPanel({ data, setData, simDate, onClose, onUpdateMa
                   <span style={{ fontWeight:500 }}>{c.nome} <span style={{ color:"var(--muted)", fontSize:11 }}>({solos.length} solos · {sz}/time)</span></span>
                   <ABtn v="primary" onClick={() => doSuggestSolos(c.id)}>Sugerir times</ABtn>
                 </div>
-                {sug && <>
-                  {sug.teams.map((team, gi) => (
-                    <div key={gi} style={{ background:"var(--card)", borderRadius:8, padding:"10px", marginBottom:8, border:"0.5px solid var(--bdm)" }}>
-                      <div style={{ ...row, justifyContent:"space-between", marginBottom:6 }}>
-                        <p style={{ fontSize:12, fontWeight:500, color:"var(--act)" }}>Sugestão {gi+1}</p>
-                        <ABtn v="success" onClick={() => confirmSoloGroup(c.id, team, gi)} style={{ fontSize:12, padding:"3px 10px" }}>Confirmar</ABtn>
-                      </div>
-                      <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                        {team.map(s => (
-                          <span key={s.id} style={{ fontSize:11, padding:"2px 8px", background:"var(--el)", border:"0.5px solid var(--bdm)", borderRadius:5, color:"var(--muted)" }}>
-                            {s.nick} {s.riot_tag}
-                            {s.disponibilidade && <span style={{ color:"var(--faint)" }}> · {s.disponibilidade.dias?.slice(0,2).join(",")} {s.disponibilidade.h_ini}</span>}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                  {sug.leftover?.length > 0 && (
-                    <p style={{ fontSize:11, color:"var(--err)", marginTop:4 }}>
-                      Sem par suficiente: {sug.leftover.map(s => s.nick).join(", ")}
-                    </p>
-                  )}
-                </>}
-              </div>
-            );
-          })}
-          {data.every(c => !c.participantes.some(p => p.tipo==="solo" && p.estado==="aprovado")) && (
-            <p style={{ color:"var(--muted)", fontSize:13 }}>Nenhum jogador solo para agrupar.</p>
-          )}
-        </div>
-      )}
-
-      {/* ── Tab 3: Partidas ── */}
-      {tab===3 && (
-        ongoingChamps.length===0
-          ? <p style={{ color:"var(--muted)", fontSize:13 }}>Nenhum campeonato em andamento.</p>
-          : ongoingChamps.map(c => (
-              <div key={c.id} style={{ marginBottom:20 }}>
-                <div style={{ ...row, justifyContent:"space-between", marginBottom:10 }}>
-                  <SLabel style={{ margin:0 }}>{c.nome}</SLabel>
-                  <ABtn v="primary" onClick={() => doGenerate(c.id)} style={{ fontSize:12, padding:"4px 12px" }}>
-                    {c.partidas.length ? "Regerar" : "Gerar partidas"}
-                  </ABtn>
-                </div>
-                {c.partidas.length===0 && <p style={{ fontSize:12, color:"var(--muted)" }}>Clique em "Gerar partidas" para criar o calendário.</p>}
-                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                  {c.partidas.map(p => (
-                    <div key={p.id} style={elStyle}>
-                      <div style={{ ...row, justifyContent:"space-between", marginBottom: p.status==="agendada" ? 8 : 0 }}>
-                        <span style={{ fontSize:13 }}>
-                          {p.transmissao && <span style={{ fontSize:10, color:"var(--err)", marginRight:4 }}>📡</span>}
-                          <span style={{ fontWeight:500 }}>{p.time1}</span>
-                          <span style={{ color:"var(--muted)", margin:"0 6px", fontSize:11 }}>vs</span>
-                          <span style={{ fontWeight:500 }}>{p.time2}</span>
-                          <span style={{ fontSize:11, color:"var(--muted)", marginLeft:8 }}>{p.fase}</span>
-                        </span>
-                        <div style={{ ...row, gap:6 }}>
-                          {p.resultado
-                            ? <Pill clr="var(--ok)" bg="var(--okbg)">{p.resultado} ✓</Pill>
-                            : p.placar_vivo && p.status==="ao_vivo"
-                              ? <Pill clr="var(--err)" bg="var(--errbg)">{p.placar_vivo} 🔴</Pill>
-                              : null}
-                          <span style={{ fontSize:11, padding:"3px 8px", borderRadius:6,
-                            color:MATCH_STATUS_CFG[p.status]?.clr, background:MATCH_STATUS_CFG[p.status]?.bg }}>
-                            {MATCH_STATUS_CFG[p.status]?.label}
-                          </span>
-                        </div>
-                      </div>
-                      {p.status==="agendada" && (
-                        <div style={{ ...row, gap:8 }}>
-                          <input value={resInput[`${c.id}-${p.id}`]||""}
-                            onChange={e => setResInput(prev => ({ ...prev, [`${c.id}-${p.id}`]: e.target.value }))}
-                            placeholder="Resultado final ex: 2-1" style={{ fontSize:12 }} />
-                          <ABtn v="primary" onClick={() => saveResult(c.id, p.id)} style={{ whiteSpace:"nowrap" }}>Salvar</ABtn>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))
-      )}
-
-      {/* ── Tab 4: Correções ── */}
-      {tab===4 && (
-        allCorrections.length===0
-          ? <p style={{ color:"var(--muted)", fontSize:13 }}>Nenhuma correção pendente.</p>
-          : <div style={scroll}>{allCorrections.map(p => (
-              <div key={`${p.champId}-${p.id}`} style={{ ...elStyle, border:`0.5px solid var(--warn)` }}>
-                <p style={{ fontSize:11, color:"var(--muted)", marginBottom:4 }}>{p.champNome} · {p.partida_desc}</p>
-                <p style={{ fontSize:13, marginBottom:6 }}>
-                  Solicitante: <span style={{ color:"var(--act)" }}>{p.solicitante}</span>
-                </p>
-                <p style={{ fontSize:13, padding:"8px 10px", background:"var(--card)", borderRadius:6, marginBottom:10 }}>
-                  "{p.descricao}"
-                </p>
-                <div style={{ ...row, gap:8 }}>
-                  <ABtn v="success" onClick={() => {
-                    if (p.matchId) updMatchPedido(p.champId, p.matchId, p.id, "aceito");
-                    else updChampPedido(p.champId, p.id, "aceito");
-                  }}>Aceitar</ABtn>
-                  <ABtn v="danger" onClick={() => {
-                    if (p.matchId) updMatchPedido(p.champId, p.matchId, p.id, "negado");
-                    else updChampPedido(p.champId, p.id, "negado");
-                  }}>Negar</ABtn>
-                </div>
-              </div>
-            ))}
-          </div>
-      )}
-    </div>
-  );
-}
+                
+                {/* Stats de agrupamento */}
+                {sug?.stats && (
+                  <div style={{
+                    display:"flex", gap:12, marginBottom:12, padding:"8px 12px",
+                    background:"var(--card)", borderRadius:8, fontSize:11
+                  }}>
+                    <span style={{ color:"var(--muted)" }}>Total
