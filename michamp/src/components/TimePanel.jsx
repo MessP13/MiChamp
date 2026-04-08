@@ -3,6 +3,8 @@ import { fd } from "../utils/dates.js";
 import { row } from "./ui.jsx";
 
 export default function TimePanel({ simDate, setSimDate }) {
+  if (import.meta.env.PROD && import.meta.env.VITE_ENABLE_SIM !== 'true') {
+    return null;
   const [open, setOpen] = useState(false);
   const add = n => { const d = new Date(simDate); d.setDate(d.getDate() + n); setSimDate(d); };
   const jumps = [{l:"-7d",n:-7},{l:"-3d",n:-3},{l:"-1d",n:-1},{l:"+1d",n:1},{l:"+3d",n:3},{l:"+7d",n:7},{l:"+14d",n:14}];
