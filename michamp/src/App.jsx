@@ -11,7 +11,17 @@ import MatchDetail from "./components/MatchDetail.jsx";
 import RegistrationForm from "./components/RegistrationForm.jsx";
 import AdminPanel from "./components/AdminPanel.jsx";
 import AdminLogin from "./components/AdminLogin.jsx";
+import { isBetaMode } from './utils/betaTime.js';
+import { storage } from './utils/storage.js';
 
+// Inicializar prefixo de storage
+if (isBetaMode()) {
+  console.log('🧪 MiChamp BETA MODE ATIVO');
+  window.__MICHAAMP_STORAGE_PREFIX = 'beta_';
+}
+
+// Usar storage em vez de localStorage direto em todo o app:
+// Exemplo: const data = storage.get('michamp_data') || initialData;
 const FILTER_KEYS = ["todos","inscricoes_abertas","em_andamento","em_breve","encerrado"];
 const FILTER_LBL  = { todos:"Todos", inscricoes_abertas:"Inscrições", em_andamento:"Em andamento", em_breve:"Em breve", encerrado:"Encerrados" };
 
