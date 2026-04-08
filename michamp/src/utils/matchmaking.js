@@ -1,5 +1,49 @@
-// src/utils/matchmaking.js - SUBSTITUIR a função suggestSoloTeams por esta:
+// src/utils/matchmaking.js
+// MiChamp - Utilitários de matchmaking por disponibilidade
 
+/**
+ * Converte hora "HH:MM" para minutos desde 00:00
+ */
+export const toMin = h => {
+  const [hh, mm] = (h || "00:00").split(":").map(Number);
+  return hh * 60 + mm;
+};
+
+/**
+ * Calcula score de compatibilidade entre duas disponibilidades
+ * @param {Object} a - Disponibilidade do jogador/time A
+ * @param {Object} b - Disponibilidade do jogador/time B
+ * @returns {number} Score: dias em comum * 100 + minutos de janela sobreposta
+ */
+export const availScore = (a = {}, b = {}) => {
+  const dias = (a.dias || []).filter(d => (b.dias || []).includes(d)).length;
+  const s = Math.max(toMin(a.h_ini), toMin(b.h_ini));
+  const e = Math.min(toMin(a.h_fim), toMin(b.h_fim));
+  return dias * 100 + Math.max(0, e - s);
+};
+
+/**
+ * Calcula janela de disponibilidade sobreposta entre dois participantes
+ * @param {Object} a - Disponibilidade A
+ * @param {Object} b - Disponibilidade B
+ * @returns {Object|null} { dias: [], janela: "HH:MM–HH:MM" } ou null se sem overlap
+ */
+export const overlapWindow = (a = {}, b = {}) => {
+  const dias = (a.dias || []).filter(d => (b.dias || []).includes(d));
+  const hIni = Math.max(toMin(a.h_ini), toMin(b.h_ini));
+  const hFim = Math.min(toMin(a.h_fim), toMin(b.h_fim));
+  if (!dias.length || hFim <= hIni) return null;
+  const fmt = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+  return { dias, janela: `${fmt(hIni)}–${fmt(hFim)}` };
+};
+
+/**
+ * Sugere formação de times a partir de jogadores solo baseado em compatibilidade
+ * @param {Array} solos - Lista de jogadores solo aprovados
+ * @param {number} size - Tamanho alvo do time (ex: 5 para Valorant)
+ * @param {Object} options - Opções: { allowLeftoverAsTeams, minTeamSize }
+ * @returns {Object} { teams: [], leftover: [], actionRequired: boolean, suggestedAction: Object|null, stats: Object }
+ */
 export const suggestSoloTeams = (solos, size, options = {}) => {
   const { 
     allowLeftoverAsTeams = false,  // se true, solos restantes viram times 1v1
