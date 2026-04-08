@@ -39,50 +39,230 @@ function TeamCard({ nome, jogadores, capitao, isRiot, isAdmin, side }) {
   );
 }
 
+// Dentro de src/components/MatchDetail.jsx - substituir ScoreBoard por:
+
 function ScoreBoard({ match, onUpdate, isAdmin, champNome }) {
+  const format = MATCH_FORMATS[(match?.format || 'SINGLE').toUpperCase()] || MATCH_FORMATS.SINGLE;
+  
+  // Estados locais para inputs
   const [liveInput, setLiveInput] = useState(match.placar_vivo || "");
   const [resultInput, setResultInput] = useState(match.resultado || "");
+  const [seriesScores, setSeriesScores] = useState(match.score?.games || Array(format.maxGames || 3).fill(null));
+  const [brRankings, setBrRankings] = useState(match.score?.rankings || []);
+
+  // Helper: Atualizar score da partida
+  const updateScore = (newScore) => {
+    onUpdate({ 
+      score: { ...match.score, ...newScore },
+      // Auto-atualizar placar_vivo para séries
+      placar_vivo: format.needsSeries 
+        ? `${newScore?.teamA || 0}-${newScore?.teamB || 0}` 
+        : match.placar_vivo
+    });
+  };
+
+  // Renderizar placar baseado no formato
+  const renderScoreDisplay = () => {
+    if (format.multiTeam) {
+      // Battle Royale: tabela de rankings
+      return (
+        <div style={{ width:"100%", overflowX:"auto" }}>
+          <table style={{ width:"100%", fontSize:12, borderCollapse:"collapse" }}>
+            <thead>
+              <tr style={{ color:"var(--muted)", borderBottom:"1px solid var(--bd)" }}>
+                <th style={{ padding:"8px", textAlign:"left" }}>Pos</th>
+                <th style={{ padding:"8px", textAlign:"left" }}>Time</th>
+                <th style={{ padding:"8px", textAlign:"center" }}>Elim</th>
+                <th style={{ padding:"8px", textAlign:"center" }}>Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[match.time1, match.time2].map((team, idx) => (
+                <tr key={team} style={{ borderTop:"1px solid var(--bd)" }}>
+                  <td style={{ padding:"8px", fontWeight:500, color: idx===0?"var(--warn)":"var(--muted)" }}>
+                    {idx + 1}º
+                  </td>
+                  <td style={{ padding:"8px", fontWeight:500 }}>{team}</td>
+                  <td style={{ padding:"8px", textAlign:"center", fontFamily:"monospace" }}>
+                    {match.score?.eliminations?.[idx] || 0}
+                  </td>
+                  <td style={{ padding:"8px", textAlign:"center", fontWeight:500, color:"var(--ok)" }}>
+                    {match.score?.points?.[idx] || (idx===0 ? 10 : 5)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {isAdmin && match.status !== "encerrada" && (
+            <div style={{ ...row, gap:6, marginTop:8, justifyContent:"center" }}>
+              <ABtn v="primary" onClick={() => {
+                const newRankings = [...(brRankings || []), { team: match.time1, position: 1 }];
+                updateScore({ rankings: newRankings });
+              }} style={{ fontSize:11, padding:"3px 8px" }}>
+                + Registrar Resultado
+              </ABtn>
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    if (format.usesPoints && !format.multiTeam) {
+      // Round Robin / Pontos corridos
+      const ptsA = match.score?.teamA || 0;
+      const ptsB = match.score?.teamB || 0;
+      return (
+        <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:16 }}>
+          <div style={{ textAlign:"center" }}>
+            <p style={{ fontSize:24, fontWeight:500 }}>{ptsA}</p>
+            <p style={{ fontSize:10, color:"var(--muted)" }}>pontos</p>
+          </div>
+          <Pill clr="var(--muted)">x</Pill>
+          <div style={{ textAlign:"center" }}>
+            <p style={{ fontSize:24, fontWeight:500 }}>{ptsB}</p>
+            <p style={{ fontSize:10, color:"var(--muted)" }}>pontos</p>
+          </div>
+        </div>
+      );
+    }
+    
+    if (format.needsSeries) {
+      // BO3 / BO5: games individuais
+      const teamAWins = seriesScores.filter(g => g === 'A').length;
+      const teamBWins = seriesScores.filter(g => g === 'B').length;
+      const isFinished = teamAWins >= format.winCondition || teamBWins >= format.winCondition;
+      
+      return (
+        <div>
+          <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:12, marginBottom:12 }}>
+            <span style={{ fontWeight:500, fontSize:18 }}>{teamAWins}</span>
+            <Pill clr="var(--muted)">x</Pill>
+            <span style={{ fontWeight:500, fontSize:18 }}>{teamBWins}</span>
+          </div>
+          
+          <div style={{ display:"flex", justifyContent:"center", gap:4, marginBottom:8 }}>
+            {Array.from({ length: format.maxGames }).map((_, i) => {
+              const winner = seriesScores[i];
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    if (readOnly || isFinished) return;
+                    const newScores = [...seriesScores];
+                    // Cycle: null → A → B → null
+                    newScores[i] = winner === 'A' ? 'B' : winner === 'B' ? null : 'A';
+                    setSeriesScores(newScores);
+                    const newA = newScores.filter(g => g === 'A').length;
+                    const newB = newScores.filter(g => g === 'B').length;
+                    updateScore({ games: newScores, teamA: newA, teamB: newB });
+                  }}
+                  disabled={readOnly || isFinished}
+                  style={{
+                    width:32, height:32, borderRadius:6,
+                    border:"1px solid var(--bdm)",
+                    background: winner === 'A' ? "var(--acbg)" : winner === 'B' ? "var(--okbg)" : "var(--el)",
+                    color: winner === 'A' ? "var(--act)" : winner === 'B' ? "var(--ok)" : "var(--muted)",
+                    fontWeight: winner ? 600 : 400,
+                    fontSize:12,
+                    opacity: readOnly || isFinished ? 0.6 : 1
+                  }}
+                  title={`Game ${i+1}: ${winner ? (winner==='A'?match.time1:match.time2) + ' venceu' : 'Não jogado'}`}
+                >
+                  {i+1}
+                </button>
+              );
+            })}
+          </div>
+          
+          {isFinished && (
+            <p style={{ textAlign:"center", fontSize:12, color:"var(--ok)", fontWeight:500 }}>
+              🏆 {teamAWins > teamBWins ? match.time1 : match.time2} venceu a série!
+            </p>
+          )}
+        </div>
+      );
+    }
+    
+    // Default: Partida única - placar simples
+    return (
+      <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:8 }}>
+        <input 
+          type="text" 
+          value={liveInput || match.placar_vivo || ""} 
+          onChange={e => {
+            setLiveInput(e.target.value);
+            if (match.status === "ao_vivo") {
+              onUpdate({ placar_vivo: e.target.value });
+            }
+          }}
+          placeholder="0-0"
+          disabled={readOnly || match.status !== "ao_vivo"}
+          style={{ 
+            width:60, textAlign:"center", fontSize:18, fontWeight:500, 
+            fontFamily:"monospace", padding:"4px 8px" 
+          }}
+        />
+        <span style={{ color:"var(--muted)", fontSize:16 }}>x</span>
+        <input 
+          type="text" 
+          value={liveInput?.split('-')?.[1] || match.placar_vivo?.split('-')?.[1] || ""} 
+          onChange={e => {
+            const [a] = (liveInput || match.placar_vivo || "0-0").split('-');
+            const newPlacar = `${a}-${e.target.value}`;
+            setLiveInput(newPlacar);
+            if (match.status === "ao_vivo") {
+              onUpdate({ placar_vivo: newPlacar });
+            }
+          }}
+          placeholder="0"
+          disabled={readOnly || match.status !== "ao_vivo"}
+          style={{ 
+            width:60, textAlign:"center", fontSize:18, fontWeight:500, 
+            fontFamily:"monospace", padding:"4px 8px" 
+          }}
+        />
+      </div>
+    );
+  };
 
   return (
-    <div style={{ background:"var(--el)", borderRadius:10, padding:"1.25rem",
-      border:"0.5px solid var(--bdm)", marginBottom:16 }}>
+    <div style={{ background:"var(--el)", borderRadius:10, padding:"1.25rem", border:"0.5px solid var(--bdm)", marginBottom:16 }}>
+      {/* Selector de formato (apenas admin) */}
+      {isAdmin && (
+        <MatchFormatSelector match={match} onUpdate={onUpdate} readOnly={false} />
+      )}
 
-      {/* score display */}
+      {/* Display do placar */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:12 }}>
         <span style={{ fontWeight:500, fontSize:16, flex:1, textAlign:"right" }}>{match.time1}</span>
-        <div style={{ textAlign:"center", minWidth:80 }}>
+        <div style={{ textAlign:"center", minWidth:120 }}>
           {match.resultado ? (
             <p style={{ fontSize:28, fontWeight:500, letterSpacing:"0.05em", color:"var(--ok)", fontFamily:"monospace" }}>
               {match.resultado}
             </p>
-          ) : match.placar_vivo && match.status === "ao_vivo" ? (
-            <div>
-              <p style={{ fontSize:26, fontWeight:500, color:"var(--err)", fontFamily:"monospace" }}>
-                {match.placar_vivo}
-              </p>
-              <span style={{ fontSize:10, color:"var(--err)", letterSpacing:"0.1em" }}>AO VIVO</span>
-            </div>
           ) : (
-            <p style={{ fontSize:22, color:"var(--muted)", letterSpacing:"0.08em" }}>vs</p>
+            renderScoreDisplay()
           )}
         </div>
         <span style={{ fontWeight:500, fontSize:16, flex:1, textAlign:"left" }}>{match.time2}</span>
       </div>
 
+      {/* Badges de status */}
       <div style={{ ...row, justifyContent:"center", gap:8, marginBottom: isAdmin ? 16 : 0 }}>
         <MatchBadge status={match.status} />
         {match.transmissao && <Pill clr="var(--err)" bg="var(--errbg)">📡 Transmissão</Pill>}
         <Pill>{match.fase}</Pill>
+        {format.id !== 'single' && <Pill clr="var(--act)" bg="var(--acbg)">{MATCH_FORMATS[format.id.toUpperCase()].icon} {MATCH_FORMATS[format.id.toUpperCase()].label}</Pill>}
       </div>
 
-      {/* admin controls */}
+      {/* Controles admin */}
       {isAdmin && (
         <>
           <Divider mt={12} mb={12} />
           <SLabel>Controles admin</SLabel>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
 
-            {/* status changer */}
+            {/* Status changer */}
             <div style={{ ...row, gap:8, flexWrap:"wrap" }}>
               <span style={{ fontSize:12, color:"var(--muted)", minWidth:60 }}>Status:</span>
               {Object.entries(MATCH_STATUS_CFG).map(([k, v]) => (
@@ -96,31 +276,47 @@ function ScoreBoard({ match, onUpdate, isAdmin, champNome }) {
               ))}
             </div>
 
-            {/* live score */}
-            {match.status === "ao_vivo" && (
+            {/* Finalizar partida */}
+            {match.status !== "encerrada" && (
               <div style={{ ...row, gap:8 }}>
-                <input value={liveInput} onChange={e => setLiveInput(e.target.value)}
-                  placeholder="Placar ao vivo ex: 1-0" style={{ fontSize:13 }} />
-                <ABtn v="warn" onClick={() => onUpdate({ placar_vivo: liveInput })}
-                  style={{ whiteSpace:"nowrap" }}>
-                  Atualizar
-                </ABtn>
-              </div>
-            )}
-
-            {/* final result */}
-            {(match.status === "encerrada" || match.status === "ao_vivo") && (
-              <div style={{ ...row, gap:8 }}>
-                <input value={resultInput} onChange={e => setResultInput(e.target.value)}
-                  placeholder="Resultado final ex: 2-1 ou 16–9" style={{ fontSize:13 }} />
-                <ABtn v="success" onClick={() => onUpdate({ resultado: resultInput, status:"encerrada", placar_vivo:null })}
-                  style={{ whiteSpace:"nowrap" }}>
+                <input 
+                  value={resultInput} 
+                  onChange={e => setResultInput(e.target.value)}
+                  placeholder={format.needsSeries ? "Vitória: Time1 ou Time2" : "Resultado ex: 2-1"} 
+                  style={{ fontSize:13, flex:1 }} 
+                />
+                <ABtn 
+                  v="success" 
+                  onClick={() => {
+                    if (format.needsSeries) {
+                      // Para séries, resultado é o nome do vencedor
+                      onUpdate({ 
+                        resultado: resultInput, 
+                        status:"encerrada", 
+                        placar_vivo:null,
+                        score: { ...match.score, finished: true }
+                      });
+                    } else {
+                      // Para partida única, validar formato X-Y
+                      if (/^\d+[-–]\d+$/.test(resultInput)) {
+                        onUpdate({ 
+                          resultado: resultInput, 
+                          status:"encerrada", 
+                          placar_vivo:null 
+                        });
+                      } else {
+                        alert("Formato inválido. Use: 2-1 ou 16–9");
+                      }
+                    }
+                  }}
+                  style={{ whiteSpace:"nowrap" }}
+                >
                   Finalizar
                 </ABtn>
               </div>
             )}
 
-            {/* transmissão toggle */}
+            {/* Transmissão toggle */}
             <div style={{ ...row, gap:8 }}>
               <button onClick={() => onUpdate({ transmissao: !match.transmissao })}
                 style={{ fontSize:12, padding:"4px 12px",
@@ -131,14 +327,18 @@ function ScoreBoard({ match, onUpdate, isAdmin, champNome }) {
               </button>
             </div>
 
-            {/* observações */}
+            {/* Observações */}
             <div>
               <label style={{ fontSize:12, color:"var(--muted)", display:"block", marginBottom:4 }}>
                 Observações internas
               </label>
-              <textarea rows={2} defaultValue={match.observacoes}
+              <textarea 
+                rows={2} 
+                defaultValue={match.observacoes}
                 onBlur={e => onUpdate({ observacoes: e.target.value })}
-                placeholder="Notas sobre esta partida..." />
+                placeholder="Notas sobre esta partida..." 
+                style={{ background:"var(--card)", fontSize:12 }}
+              />
             </div>
           </div>
         </>
