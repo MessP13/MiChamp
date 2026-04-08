@@ -1,13 +1,26 @@
+// src/components/TimePanel.jsx
 import { useState } from "react";
 import { fd } from "../utils/dates.js";
 import { row } from "./ui.jsx";
 
 export default function TimePanel({ simDate, setSimDate }) {
+  // Esconder em produção a menos que VITE_ENABLE_SIM=true
   if (import.meta.env.PROD && import.meta.env.VITE_ENABLE_SIM !== 'true') {
     return null;
+  } // ✅ Fecha o if aqui!
+
   const [open, setOpen] = useState(false);
-  const add = n => { const d = new Date(simDate); d.setDate(d.getDate() + n); setSimDate(d); };
-  const jumps = [{l:"-7d",n:-7},{l:"-3d",n:-3},{l:"-1d",n:-1},{l:"+1d",n:1},{l:"+3d",n:3},{l:"+7d",n:7},{l:"+14d",n:14}];
+  
+  const add = n => { 
+    const d = new Date(simDate); 
+    d.setDate(d.getDate() + n); 
+    setSimDate(d); 
+  };
+  
+  const jumps = [
+    {l:"-7d",n:-7},{l:"-3d",n:-3},{l:"-1d",n:-1},
+    {l:"+1d",n:1},{l:"+3d",n:3},{l:"+7d",n:7},{l:"+14d",n:14}
+  ];
 
   return (
     <div style={{ background:"var(--el)", border:"0.5px solid var(--bdm)", borderRadius:10, marginBottom:16, overflow:"hidden" }}>
@@ -20,6 +33,7 @@ export default function TimePanel({ simDate, setSimDate }) {
         </div>
         <span style={{ fontSize:10, color:"var(--muted)" }}>{open ? "▲" : "▼"}</span>
       </div>
+      
       {open && (
         <div style={{ padding:"10px 14px 14px", borderTop:"0.5px solid var(--bd)" }}>
           <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:10 }}>
@@ -38,8 +52,14 @@ export default function TimePanel({ simDate, setSimDate }) {
           </div>
           <div style={{ ...row, gap:8 }}>
             <input type="date" defaultValue="2026-04-01"
-              onChange={e => { if (e.target.value) { const[y,m,d]=e.target.value.split('-'); setSimDate(new Date(+y,+m-1,+d)); }}}
-              style={{ width:160, fontSize:12 }} />
+              onChange={e => { 
+                if (e.target.value) { 
+                  const[y,m,d]=e.target.value.split('-'); 
+                  setSimDate(new Date(+y,+m-1,+d)); 
+                }
+              }}
+              style={{ width:160, fontSize:12 }} 
+            />
             <span style={{ fontSize:11, color:"var(--muted)" }}>data específica</span>
           </div>
           <p style={{ fontSize:11, color:"var(--muted)", marginTop:8 }}>
