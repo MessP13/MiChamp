@@ -2,16 +2,18 @@ export const RIOT_GAMES = new Set(["Valorant", "League of Legends"]);
 
 export const TEAM_SIZE = {
   "Valorant": 5,
-  "League of Legends": 5,
-  "Counter-Strike 2": 5,
-  "Rocket League": 3,
 };
 
 export const ROLES_BY_GAME = {
   "Valorant":          ["Duelista","Iniciador","Sentinela","Controlador","Flex"],
-  "League of Legends": ["Top","Jungle","Mid","ADC","Support"],
-  "Counter-Strike 2":  ["Entry","AWPer","Support","IGL","Lurker"],
-  "Rocket League":     ["Striker","Midfielder","Goalkeeper","Flex"],
+};
+
+export const ROLE_ICONS = {
+  "Iniciador":  "⚡",
+  "Sentinela":  "🛡️",
+  "Controlador": "⏫",
+  "Duelista":    "✖️",
+  "Flex":        "🔄",
 };
 
 export const FORMAT_LABEL = {

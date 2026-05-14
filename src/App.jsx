@@ -3,7 +3,7 @@ import { INIT_DATA } from "./data/sampleData.js";
 import { STATUS_CFG } from "./constants.js";
 import { computeStatus } from "./utils/dates.js";
 import { fd } from "./utils/dates.js";
-import { Chip, Badge, card, row } from "./components/ui.jsx";
+import { Chip, Badge, Pill, SLabel, card, row } from "./components/ui.jsx";
 import { FORMAT_LABEL } from "./constants.js";
 import TimePanel from "./components/TimePanel.jsx";
 import ChampDetail from "./components/ChampDetail.jsx";
@@ -14,10 +14,10 @@ import AdminLogin from "./components/AdminLogin.jsx";
 import { isBetaMode } from './utils/betaTime.js';
 import { storage } from './utils/storage.js';
 
-// Inicializar prefixo de storage
+// MiChamp - Tournament Management System
+// Initial storage config is handled in storage.js
 if (isBetaMode()) {
   console.log('🧪 MiChamp BETA MODE ATIVO');
-  window.__MICHAAMP_STORAGE_PREFIX = 'beta_';
 }
 
 // Usar storage em vez de localStorage direto em todo o app:
@@ -74,89 +74,124 @@ export default function App() {
   const updateMatch = (champId, matchId, patch) =>
     setData(prev => prev.map(c => c.id !== champId ? c : {
       ...c,
-      partidas: c.partidas.map(m => m.id !== matchId ? m : { ...m, ...patch }),
+      partidas: (c.partidas || []).map(m => m.id !== matchId ? m : { ...m, ...patch }),
     }));
 
   return (
-    <div style={{ maxWidth:700, margin:"0 auto", padding:"1.5rem 1rem", minHeight:"100vh" }}>
-      <TimePanel simDate={simDate} setSimDate={setSimDate} />
-
-      {/* ── Home ── */}
-      {view === "home" && (
-        <>
-          <div style={{ ...row, justifyContent:"space-between", marginBottom:"1.5rem" }}>
-            <div>
-              <h1 style={{ fontSize:22, fontWeight:500, letterSpacing:"-0.01em" }}>MiChamp</h1>
-              <p style={{ fontSize:13, color:"var(--muted)", marginTop:3 }}>Campeonatos de eSports</p>
-            </div>
-            <button onClick={() => setView(isAdmin ? "admin" : "admin_login")}
-              style={{ fontSize:12, padding:"5px 12px",
-                borderColor: isAdmin ? "var(--warn)" : "var(--bdm)",
-                color: isAdmin ? "var(--warn)" : "var(--muted)" }}>
-              {isAdmin ? "⚙ Admin" : "🔒 Admin"}
-            </button>
+    <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem 1rem", minHeight: "100vh" }}>
+      <header className="animate-in" style={{ marginBottom: "2.5rem" }}>
+        <div style={{ ...row, justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--ac)" }}>MiChamp</h1>
+            <p style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>The Future of eSports Tournaments</p>
           </div>
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:"1.25rem" }}>
-            {FILTER_KEYS.map(s => <Chip key={s} label={FILTER_LBL[s]} active={filter === s} onClick={() => setFilter(s)} />)}
-          </div>
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {filtered.length === 0 && <p style={{ color:"var(--muted)", fontSize:13 }}>Nenhum campeonato encontrado.</p>}
-            {filtered.map(c => (
-              <ChampCard key={c.id} champ={c} status={c._st} onClick={ch => { setSelChampId(ch.id); setView("detail"); }} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* ── Champ detail ── */}
-      {view === "detail" && selChamp && (
-        <ChampDetail
-          champ={selChamp} status={selStatus} isAdmin={isAdmin}
-          onBack={() => setView("home")}
-          onInscricao={() => setView("register")}
-          onPedido={addPedido}
-          onSelectMatch={m => { setSelMatchId(m.id); setView("match"); }}
-        />
-      )}
-
-      {/* ── Match detail ── */}
-      {view === "match" && selChamp && selMatch && (
-        <MatchDetail
-          match={selMatch} champ={selChamp} isAdmin={isAdmin}
-          onBack={() => setView("detail")}
-          onUpdateMatch={updateMatch}
-          onAddPedido={addPedido}
-        />
-      )}
-
-      {/* ── Registration ── */}
-      {view === "register" && selChamp && (
-        <div style={card}>
-          <RegistrationForm champ={selChamp}
-            onClose={() => setView("detail")}
-            onSubmit={p => { addParticipant(p); setView("detail"); }} />
+          {isBetaMode() && (
+            <Pill clr="#fff" bg="linear-gradient(135deg, #ff4655, #ff858f)">
+              🧪 BETA
+            </Pill>
+          )}
         </div>
-      )}
+      </header>
 
-      {/* ── Admin login ── */}
-      {view === "admin_login" && (
-        <AdminLogin onLogin={() => { setIsAdmin(true); setView("admin"); }} />
-      )}
+      <div className="animate-in" style={{ animationDelay: "0.1s" }}>
+        <TimePanel simDate={simDate} setSimDate={setSimDate} />
+      </div>
 
-      {/* ── Admin panel ── */}
-      {view === "admin" && isAdmin && (
-        <>
-          <button onClick={() => setView("home")}
-            style={{ marginBottom:16, color:"var(--muted)", border:"none", background:"none", padding:0, fontSize:13 }}>
-            ← Início
-          </button>
+      <main className="animate-in" style={{ animationDelay: "0.2s", marginTop: "2rem" }}>
+        {/* ── Home ── */}
+        {view === "home" && (
+          <>
+            <div style={{ ...row, justifyContent: "space-between", marginBottom: "1.5rem" }}>
+              <SLabel style={{ margin: 0 }}>Campeonatos Disponíveis</SLabel>
+              <button 
+                onClick={() => setView(isAdmin ? "admin" : "admin_login")}
+                style={{ fontSize: 11, padding: "5px 12px", borderRadius: 8, border: "1px solid var(--bdm)" }}
+              >
+                {isAdmin ? "⚙ Administração" : "🔒 Área Restrita"}
+              </button>
+            </div>
+            
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: "1.5rem" }}>
+              {FILTER_KEYS.map(s => (
+                <Chip key={s} label={FILTER_LBL[s]} active={filter === s} onClick={() => setFilter(s)} />
+              ))}
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {filtered.length === 0 && (
+                <div style={{ ...card, textAlign: "center", padding: "3rem 1rem", color: "var(--muted)" }}>
+                  <p>Nenhum campeonato encontrado para este filtro.</p>
+                </div>
+              )}
+              {filtered.map(c => (
+                <ChampCard key={c.id} champ={c} status={c._st} onClick={ch => { setSelChampId(ch.id); setView("detail"); }} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ── Champ detail ── */}
+        {view === "detail" && selChamp && (
+          <ChampDetail
+            champ={selChamp} status={selStatus} isAdmin={isAdmin}
+            onBack={() => setView("home")}
+            onInscricao={() => setView("register")}
+            onPedido={addPedido}
+            onSelectMatch={m => { setSelMatchId(m.id); setView("match"); }}
+          />
+        )}
+
+        {/* ── Match detail ── */}
+        {view === "match" && selChamp && selMatch && (
+          <MatchDetail
+            match={selMatch} champ={selChamp} isAdmin={isAdmin}
+            onBack={() => setView("detail")}
+            onUpdateMatch={updateMatch}
+            onAddPedido={addPedido}
+          />
+        )}
+
+        {/* ── Registration ── */}
+        {view === "register" && selChamp && (
           <div style={card}>
-            <AdminPanel data={data} setData={setData} simDate={simDate}
-              onClose={() => { setIsAdmin(false); setView("home"); }}
-              onUpdateMatch={updateMatch} />
+            <RegistrationForm 
+              champ={selChamp}
+              onClose={() => setView("detail")}
+              onSubmit={p => { addParticipant(p); setView("detail"); }} 
+            />
           </div>
-        </>
-      )}
+        )}
+
+        {/* ── Admin login ── */}
+        {view === "admin_login" && (
+          <div style={{ maxWidth: 400, margin: "2rem auto" }}>
+            <AdminLogin onLogin={() => { setIsAdmin(true); setView("admin"); }} />
+          </div>
+        )}
+
+        {/* ── Admin panel ── */}
+        {view === "admin" && isAdmin && (
+          <>
+            <button 
+              onClick={() => setView("home")}
+              style={{ marginBottom: 16, color: "var(--muted)", border: "none", background: "none", padding: 0, fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}
+            >
+              ← Voltar para o Início
+            </button>
+            <div style={card}>
+              <AdminPanel data={data} setData={setData} simDate={simDate}
+                onClose={() => { setIsAdmin(false); setView("home"); }}
+                onUpdateMatch={updateMatch} />
+            </div>
+          </>
+        )}
+      </main>
+
+      <footer style={{ marginTop: "4rem", textAlign: "center", borderTop: "1px solid var(--bd)", padding: "2rem 0" }}>
+        <p style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.05em" }}>
+          &copy; 2026 MiChamp • Tournament Management System
+        </p>
+      </footer>
     </div>
   );
 }

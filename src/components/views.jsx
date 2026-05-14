@@ -1,4 +1,4 @@
-import { RIOT_GAMES } from "../constants.js";
+import { RIOT_GAMES, ROLE_ICONS } from "../constants.js";
 import { SLabel, Pill, row } from "./ui.jsx";
 
 export function ParticipantList({ participantes, jogo, isAdmin }) {
@@ -29,7 +29,7 @@ export function ParticipantList({ participantes, jogo, isAdmin }) {
                     border:"0.5px solid var(--bdm)", borderRadius:5,
                     color: j.nick === t.capitao ? "var(--warn)" : "var(--muted)" }}>
                     {j.nick === t.capitao ? "⚡ " : ""}{j.nick}{isAdmin ? j.riot_tag : ""}
-                    {j.role && <span style={{ color:"var(--faint)" }}> · {j.role}</span>}
+                    {j.role && <span style={{ color:"var(--faint)" }}> · {ROLE_ICONS[j.role] || ""} {j.role}</span>}
                   </span>
                 ))}
               </div>
@@ -43,7 +43,7 @@ export function ParticipantList({ participantes, jogo, isAdmin }) {
           {solos.map(s => (
             <div key={s.id} style={{ fontSize:13, padding:"5px 12px", background:"var(--el)", border:"0.5px solid var(--bd)", borderRadius:8 }}>
               {s.nick}{isAdmin ? s.riot_tag : ""}
-              {s.role && <span style={{ fontSize:11, color:"var(--muted)" }}> · {s.role}</span>}
+              {s.role && <span style={{ fontSize:11, color:"var(--muted)" }}> · {ROLE_ICONS[s.role] || ""} {s.role}</span>}
             </div>
           ))}
         </div>
@@ -59,20 +59,24 @@ export function StandingsTable({ tabela }) {
       <div style={{ overflowX:"auto" }}>
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
           <thead>
-            <tr style={{ borderBottom:"0.5px solid var(--bdm)" }}>
+            <tr style={{ borderBottom:"1px solid var(--bdm)", background: "rgba(255,255,255,0.02)" }}>
               {["#","Time","J","V","E","D","P","SG"].map(h => (
-                <th key={h} style={{ padding:"6px 8px", textAlign: h==="Time"?"left":"center", color:"var(--muted)", fontWeight:400, fontSize:11 }}>{h}</th>
+                <th key={h} style={{ padding:"10px 8px", textAlign: h==="Time"?"left":"center", color:"var(--muted)", fontWeight:700, fontSize:10, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {tabela.map(r => (
-              <tr key={r.pos} style={{ borderBottom:"0.5px solid var(--bd)", background: r.pos<=2 ? "rgba(96,165,250,0.06)" : "transparent" }}>
-                <td style={{ padding:"7px 8px", textAlign:"center", color:"var(--muted)" }}>{r.pos}</td>
-                <td style={{ padding:"7px 8px", fontWeight:500 }}>{r.nome} <span style={{ color:"var(--muted)", fontSize:11 }}>{r.tag}</span></td>
+              <tr key={r.pos} style={{ 
+                borderBottom:"1px solid var(--bd)", 
+                background: r.pos <= 2 ? "rgba(255, 70, 85, 0.04)" : r.pos % 2 === 0 ? "rgba(255,255,255,0.01)" : "transparent",
+                transition: "background 0.2s"
+              }}>
+                <td style={{ padding:"10px 8px", textAlign:"center", color: r.pos <= 2 ? "var(--ac)" : "var(--muted)", fontWeight: 700 }}>{r.pos}</td>
+                <td style={{ padding:"10px 8px", fontWeight:600 }}>{r.nome} <span style={{ color:"var(--muted)", fontSize:11, fontWeight: 400 }}>{r.tag}</span></td>
                 {["J","V","E","D","P","SG"].map(k => (
-                  <td key={k} style={{ padding:"7px 8px", textAlign:"center",
-                    color: k==="P" ? "var(--nfo)" : "var(--text)", fontWeight: k==="P" ? 500 : 400 }}>{r[k]}</td>
+                  <td key={k} style={{ padding:"10px 8px", textAlign:"center",
+                    color: k==="P" ? "var(--ac)" : "var(--text)", fontWeight: k==="P" ? 700 : 400 }}>{r[k]}</td>
                 ))}
               </tr>
             ))}

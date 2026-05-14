@@ -1,64 +1,125 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0c0c12;
-  --card: #13131f;
-  --el: #1b1b28;
-  --hover: #222235;
-  --text: #dcdcf0;
-  --muted: #6464a0;
-  --faint: #2e2e48;
-  --bd: rgba(255,255,255,0.07);
-  --bdm: rgba(255,255,255,0.13);
-  --ac: #818cf8;
-  --acbg: rgba(129,140,248,0.13);
-  --act: #a5b4fc;
+  --bg: #08080c;
+  --card: rgba(19, 19, 31, 0.8);
+  --el: rgba(27, 27, 40, 0.6);
+  --hover: rgba(34, 34, 53, 0.9);
+  --text: #f0f0f7;
+  --muted: #8e8eaf;
+  --faint: #252538;
+  --bd: rgba(255, 255, 255, 0.08);
+  --bdm: rgba(255, 255, 255, 0.15);
+  
+  /* Accent: Valorant Red/Pink theme */
+  --ac: #ff4655; 
+  --acbg: rgba(255, 70, 85, 0.15);
+  --act: #ff858f;
+  
   --ok: #4ade80;
-  --okbg: rgba(74,222,128,0.09);
+  --okbg: rgba(74, 222, 128, 0.12);
   --nfo: #60a5fa;
-  --nfobg: rgba(96,165,250,0.09);
+  --nfobg: rgba(96, 165, 250, 0.12);
   --warn: #fbbf24;
-  --warnbg: rgba(251,191,36,0.09);
+  --warnbg: rgba(251, 191, 36, 0.12);
   --err: #f87171;
-  --errbg: rgba(248,113,113,0.09);
+  --errbg: rgba(248, 113, 113, 0.12);
+  
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-bd: rgba(255, 255, 255, 0.08);
+  --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
 body {
   background: var(--bg);
+  background-image: 
+    radial-gradient(circle at 0% 0%, rgba(255, 70, 85, 0.05) 0%, transparent 25%),
+    radial-gradient(circle at 100% 100%, rgba(129, 140, 248, 0.05) 0%, transparent 25%);
   color: var(--text);
-  font-family: system-ui, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
 button {
   cursor: pointer;
-  border: 0.5px solid var(--bdm);
-  background: transparent;
+  border: 1px solid var(--bdm);
+  background: var(--glass-bg);
   color: var(--text);
-  border-radius: 8px;
-  font: inherit;
+  border-radius: 10px;
+  font-weight: 500;
   font-size: 13px;
-  padding: 7px 14px;
-  transition: background 0.1s;
+  padding: 8px 16px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(4px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
-button:hover:not(:disabled) { background: var(--hover); }
-button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+button:hover:not(:disabled) { 
+  background: var(--acbg); 
+  border-color: var(--ac);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 70, 85, 0.2);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 input, select, textarea {
   background: var(--el);
-  border: 0.5px solid var(--bdm);
+  border: 1px solid var(--bdm);
   color: var(--text);
-  border-radius: 8px;
-  font: inherit;
+  border-radius: 10px;
+  font-family: inherit;
   font-size: 13px;
-  padding: 8px 12px;
+  padding: 10px 14px;
   outline: none;
   width: 100%;
-  transition: border-color 0.1s;
+  transition: all 0.2s;
 }
-input:focus, select:focus, textarea:focus { border-color: var(--ac); }
-::placeholder { color: var(--muted); }
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 2px; }
+input:focus, select:focus, textarea:focus { 
+  border-color: var(--ac);
+  background: var(--hover);
+  box-shadow: 0 0 0 3px var(--acbg);
+}
+
+::placeholder { color: var(--muted); opacity: 0.6; }
+
+/* Scrollbar Otimizada */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { 
+  background: var(--faint); 
+  border-radius: 10px; 
+  border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* Animações de entrada */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
+.pulse {
+  animation: pulse 2s infinite ease-in-out;
+}

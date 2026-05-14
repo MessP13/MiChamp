@@ -1,29 +1,68 @@
 import { STATUS_CFG, MATCH_STATUS_CFG } from '../constants.js';
 
-// Adicionar no header principal:
-{import.meta.env.VITE_ENV === 'beta' && (
-  <span style={{ 
-    background:"linear-gradient(135deg, #6366f1, #8b5cf6)", 
-    color:"white", 
-    padding:"0.25rem 0.75rem", 
-    borderRadius:9999, 
-    fontSize:11, 
-    fontWeight:600,
-    boxShadow:"0 0 15px rgba(139, 92, 246, 0.5)"
-  }}>
-    🧪 BETA • 1min = 1dia • <strong style={{marginLeft:4}}>Dados isolados</strong>
-  </span>
-)}
+// Componentes UI Básicos com design premium
+export const card = {
+  background: "var(--card)",
+  borderRadius: "16px",
+  padding: "1.25rem",
+  border: "1px solid var(--bd)",
+  backdropFilter: "blur(12px)",
+  boxShadow: "var(--shadow)",
+  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+};
 
-export const row  = { display:"flex", alignItems:"center", gap:8 };
-export const card = { background:"var(--card)", border:"0.5px solid var(--bd)", borderRadius:12, padding:"1rem 1.25rem" };
-export const scroll = { maxHeight:380, overflowY:"auto", display:"flex", flexDirection:"column", gap:10 };
+export const row = {
+  display: "flex",
+  alignItems: "center",
+  gap: "0.5rem",
+};
+
+export const scroll = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px",
+  maxHeight: "60vh",
+  overflowY: "auto",
+  paddingRight: "4px",
+};
+
+export function Chip({ label, active, onClick, ok }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: "6px 14px",
+        fontSize: "12px",
+        borderRadius: "20px",
+        background: active ? (ok ? "var(--okbg)" : "var(--acbg)") : "var(--el)",
+        borderColor: active ? (ok ? "var(--ok)" : "var(--ac)") : "var(--bdm)",
+        color: active ? (ok ? "var(--ok)" : "var(--act)") : "var(--muted)",
+        fontWeight: active ? "600" : "400",
+        whiteSpace: "nowrap"
+      }}
+    >
+      {label}
+    </button>
+  );
+}
 
 export function Badge({ status }) {
   const c = STATUS_CFG[status] || STATUS_CFG.encerrado;
   return (
-    <span style={{ fontSize:11, fontWeight:500, padding:"3px 10px", borderRadius:6,
-      color:c.clr, background:c.bg, whiteSpace:"nowrap" }}>
+    <span
+      style={{
+        fontSize: "10px",
+        fontWeight: "700",
+        textTransform: "uppercase",
+        letterSpacing: "0.05em",
+        padding: "4px 10px",
+        borderRadius: "6px",
+        color: c.clr,
+        background: c.bg,
+        border: `1px solid ${c.clr}33`,
+        whiteSpace: "nowrap"
+      }}
+    >
       {c.label}
     </span>
   );
@@ -32,57 +71,83 @@ export function Badge({ status }) {
 export function MatchBadge({ status }) {
   const c = MATCH_STATUS_CFG[status] || MATCH_STATUS_CFG.agendada;
   return (
-    <span style={{ fontSize:11, fontWeight:500, padding:"3px 10px", borderRadius:6,
-      color:c.clr, background:c.bg, whiteSpace:"nowrap" }}>
+    <span
+      style={{
+        fontSize: "10px",
+        fontWeight: "700",
+        textTransform: "uppercase",
+        letterSpacing: "0.05em",
+        padding: "4px 10px",
+        borderRadius: "6px",
+        color: c.clr,
+        background: c.bg,
+        border: `1px solid ${c.clr}33`,
+        whiteSpace: "nowrap"
+      }}
+    >
       {c.label}
     </span>
   );
 }
 
-export function Chip({ label, active, onClick, ok }) {
+export function Pill({ children, clr = "var(--muted)", bg = "var(--el)", className = "" }) {
   return (
-    <button onClick={onClick} style={{ fontSize:12, padding:"4px 10px",
-      borderColor: active ? (ok ? "var(--ok)" : "var(--ac)") : "var(--bdm)",
-      background:  active ? (ok ? "var(--okbg)" : "var(--acbg)") : "transparent",
-      color:       active ? (ok ? "var(--ok)" : "var(--act)") : "var(--muted)" }}>
-      {label}
-    </button>
-  );
-}
-
-export function Divider({ mt=12, mb=12 }) {
-  return <div style={{ borderTop:"0.5px solid var(--bd)", marginTop:mt, marginBottom:mb }} />;
-}
-
-export function SLabel({ children, style={} }) {
-  return (
-    <p style={{ fontSize:11, color:"var(--muted)", textTransform:"uppercase",
-      letterSpacing:"0.08em", margin:"0 0 8px", ...style }}>
-      {children}
-    </p>
-  );
-}
-
-export function ABtn({ children, onClick, v="default", disabled, style={} }) {
-  const vs = {
-    default: {},
-    primary: { borderColor:"var(--ac)",   color:"var(--act)", background:"var(--acbg)"  },
-    danger:  { borderColor:"var(--err)",  color:"var(--err)", background:"var(--errbg)" },
-    success: { borderColor:"var(--ok)",   color:"var(--ok)",  background:"var(--okbg)"  },
-    warn:    { borderColor:"var(--warn)", color:"var(--warn)",background:"var(--warnbg)"},
-  };
-  return (
-    <button onClick={onClick} disabled={disabled} style={{ ...vs[v], ...style }}>
-      {children}
-    </button>
-  );
-}
-
-export function Pill({ children, clr="var(--muted)", bg="var(--el)" }) {
-  return (
-    <span style={{ fontSize:11, padding:"2px 7px", borderRadius:5,
-      border:"0.5px solid var(--bdm)", color:clr, background:bg, whiteSpace:"nowrap" }}>
+    <span className={className} style={{
+      fontSize: "10px",
+      fontWeight: "600",
+      padding: "2px 8px",
+      borderRadius: "20px",
+      color: clr,
+      background: bg,
+      border: `1px solid ${clr}33`,
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "4px",
+      whiteSpace: "nowrap"
+    }}>
       {children}
     </span>
   );
 }
+
+export function ABtn({ children, onClick, v = "primary", disabled, style = {} }) {
+  const variants = {
+    default: { bd: "var(--bdm)", bg: "var(--el)", c: "var(--text)" },
+    primary: { bd: "var(--ac)", bg: "var(--acbg)", c: "var(--act)" },
+    success: { bd: "var(--ok)", bg: "var(--okbg)", c: "var(--ok)" },
+    danger:  { bd: "var(--err)", bg: "var(--errbg)", c: "var(--err)" },
+    warn:    { bd: "var(--warn)", bg: "var(--warnbg)", c: "var(--warn)" },
+  };
+  const cur = variants[v] || variants.primary;
+
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      padding: "6px 14px",
+      fontSize: "12px",
+      borderColor: cur.bd,
+      background: cur.bg,
+      color: cur.c,
+      ...style
+    }}>
+      {children}
+    </button>
+  );
+}
+
+export const SLabel = ({ children, style = {} }) => (
+  <p style={{ 
+    fontSize: "10px", 
+    fontWeight: "700", 
+    color: "var(--muted)", 
+    textTransform: "uppercase", 
+    letterSpacing: "0.1em", 
+    marginBottom: "8px", 
+    ...style 
+  }}>
+    {children}
+  </p>
+);
+
+export const Divider = ({ mt = 12, mb = 12 }) => (
+  <div style={{ height: "1px", background: "var(--bd)", margin: `${mt}px 0 ${mb}px 0` }} />
+);

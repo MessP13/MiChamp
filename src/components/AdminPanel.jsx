@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { STATUS_CFG, MATCH_STATUS_CFG, TEAM_SIZE } from "../constants.js";
+import { STATUS_CFG, MATCH_STATUS_CFG, TEAM_SIZE, ROLE_ICONS } from "../constants.js";
 import { computeStatus } from "../utils/dates.js";
 import { suggestSoloTeams } from "../utils/matchmaking.js";
 import { generateMatches } from "../utils/championship.js";
@@ -157,11 +157,13 @@ export default function AdminPanel({ data, setData, simDate, onClose, onUpdateMa
           zIndex:1000, padding:"1rem"
         }} onClick={() => setActionPending(null)}>
           <div style={{
-            background:"var(--card)", borderRadius:12, padding:"1.5rem",
-            maxWidth:480, width:"100%", border:"1px solid var(--warn)"
+            background:"var(--card)", borderRadius:20, padding:"2rem",
+            maxWidth:480, width:"100%", border:"1px solid var(--bdm)",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+            backdropFilter: "blur(20px)"
           }} onClick={e => e.stopPropagation()}>
-            <div style={{ ...row, justifyContent:"space-between", marginBottom:16 }}>
-              <h3 style={{ fontSize:16, fontWeight:600, color:"var(--warn)" }}>⚠️ Jogadores sem Time</h3>
+            <div style={{ ...row, justifyContent:"space-between", marginBottom:20 }}>
+              <h3 style={{ fontSize:18, fontWeight:800, color:"var(--warn)", letterSpacing:"-0.02em" }}>⚠️ Jogadores sem Time</h3>
               <button onClick={() => setActionPending(null)} 
                 style={{ fontSize:18, color:"var(--muted)", background:"none", border:"none", padding:"0 4px" }}>×</button>
             </div>
@@ -247,7 +249,7 @@ export default function AdminPanel({ data, setData, simDate, onClose, onUpdateMa
                   <div>
                     <span style={{ fontWeight:500 }}>{p.nick||p.nome}</span>
                     <span style={{ fontSize:12, color:"var(--warn)", marginLeft:6, fontFamily:"monospace" }}>{p.riot_tag}</span>
-                    {p.role && <span style={{ fontSize:11, color:"var(--muted)", marginLeft:4 }}>· {p.role}</span>}
+                    {p.role && <span style={{ fontSize:11, color:"var(--muted)", marginLeft:4 }}>· {ROLE_ICONS[p.role] || ""} {p.role}</span>}
                     {p.disponibilidade && (
                       <p style={{ fontSize:11, color:"var(--muted)", marginTop:3 }}>
                         {p.disponibilidade.dias?.join(", ")} · {p.disponibilidade.h_ini}–{p.disponibilidade.h_fim}
