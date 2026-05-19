@@ -10,12 +10,11 @@
   --faint: #252538;
   --bd: rgba(255, 255, 255, 0.08);
   --bdm: rgba(255, 255, 255, 0.15);
-  
-  /* Accent: Valorant Red/Pink theme */
-  --ac: #ff4655; 
+
+  --ac: #ff4655;
   --acbg: rgba(255, 70, 85, 0.15);
   --act: #ff858f;
-  
+
   --ok: #4ade80;
   --okbg: rgba(74, 222, 128, 0.12);
   --nfo: #60a5fa;
@@ -24,23 +23,60 @@
   --warnbg: rgba(251, 191, 36, 0.12);
   --err: #f87171;
   --errbg: rgba(248, 113, 113, 0.12);
-  
+
   --glass-bg: rgba(255, 255, 255, 0.03);
   --glass-bd: rgba(255, 255, 255, 0.08);
   --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
+  --bg-g1: rgba(255, 70, 85, 0.05);
+  --bg-g2: rgba(129, 140, 248, 0.05);
+}
+
+/* ── Tema Claro ────────────────────────────────────── */
+html[data-theme="light"] {
+  --bg: #f2f2f7;
+  --card: rgba(255, 255, 255, 0.92);
+  --el: rgba(0, 0, 0, 0.05);
+  --hover: rgba(0, 0, 0, 0.08);
+  --text: #1c1c1e;
+  --muted: #8e8e93;
+  --faint: #d0d0da;
+  --bd: rgba(0, 0, 0, 0.08);
+  --bdm: rgba(0, 0, 0, 0.16);
+
+  --ac: #e5303f;
+  --acbg: rgba(229, 48, 63, 0.10);
+  --act: #c0202e;
+
+  --ok: #28a745;
+  --okbg: rgba(40, 167, 69, 0.10);
+  --nfo: #007aff;
+  --nfobg: rgba(0, 122, 255, 0.10);
+  --warn: #ff9500;
+  --warnbg: rgba(255, 149, 0, 0.10);
+  --err: #ff3b30;
+  --errbg: rgba(255, 59, 48, 0.10);
+
+  --glass-bg: rgba(0, 0, 0, 0.03);
+  --glass-bd: rgba(0, 0, 0, 0.08);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+
+  --bg-g1: rgba(229, 48, 63, 0.04);
+  --bg-g2: rgba(0, 122, 255, 0.04);
 }
 
 body {
   background: var(--bg);
-  background-image: 
-    radial-gradient(circle at 0% 0%, rgba(255, 70, 85, 0.05) 0%, transparent 25%),
-    radial-gradient(circle at 100% 100%, rgba(129, 140, 248, 0.05) 0%, transparent 25%);
+  background-image:
+    radial-gradient(circle at 0% 0%, var(--bg-g1) 0%, transparent 25%),
+    radial-gradient(circle at 100% 100%, var(--bg-g2) 0%, transparent 25%);
   color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 14px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 button {
@@ -60,17 +96,14 @@ button {
   gap: 8px;
 }
 
-button:hover:not(:disabled) { 
-  background: var(--acbg); 
+button:hover:not(:disabled) {
+  background: var(--acbg);
   border-color: var(--ac);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(255, 70, 85, 0.2);
 }
 
-button:active:not(:disabled) {
-  transform: translateY(0);
-}
-
+button:active:not(:disabled) { transform: translateY(0); }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 input, select, textarea {
@@ -86,7 +119,7 @@ input, select, textarea {
   transition: all 0.2s;
 }
 
-input:focus, select:focus, textarea:focus { 
+input:focus, select:focus, textarea:focus {
   border-color: var(--ac);
   background: var(--hover);
   box-shadow: 0 0 0 3px var(--acbg);
@@ -94,32 +127,30 @@ input:focus, select:focus, textarea:focus {
 
 ::placeholder { color: var(--muted); opacity: 0.6; }
 
-/* Scrollbar Otimizada */
+/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { 
-  background: var(--faint); 
-  border-radius: 10px; 
+::-webkit-scrollbar-thumb {
+  background: var(--faint);
+  border-radius: 10px;
   border: 2px solid var(--bg);
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
-/* Animações de entrada */
+/* Animações */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
-.animate-in {
-  animation: fadeIn 0.4s ease-out forwards;
-}
+.animate-in { animation: fadeIn 0.35s ease-out forwards; }
 
 @keyframes pulse {
-  0% { opacity: 0.7; }
-  50% { opacity: 1; }
-  100% { opacity: 0.7; }
+  0%, 100% { opacity: 0.7; }
+  50%       { opacity: 1; }
 }
+.pulse { animation: pulse 2s infinite ease-in-out; }
 
-.pulse {
-  animation: pulse 2s infinite ease-in-out;
+/* Transições suaves de tema em elementos-chave */
+button, input, select, textarea, .card-transition {
+  transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
